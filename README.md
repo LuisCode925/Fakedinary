@@ -10,7 +10,7 @@ curl -X POST -F "file=@PATH/FILE.pdf" http://localhost:8080/pdf/upload
 
 Multiples archivos:
 ```
-curl -X POST -F "files=@PATH/FILE.pdf" -F "files=@PATH/FILE.pdf" http://localhost:8080/pdf/upload
+curl -X POST -F "files=@PATH/FILE.pdf" -F "files=@PATH/FILE.pdf" http://localhost:8080/pdf/upload-multiple
 ```
 
 El proceso de subir un archivo PDF mostrara información relativa al mismo, asi como enlaces para 
