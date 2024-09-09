@@ -90,6 +90,8 @@ public class FilePDFController {
 
         // extractText -> para que te mande el texto del documento.
         saved.add(linkTo(methodOn(FilePDFController.class).extractText(saved.getUuid().toString())).withSelfRel());
+
+        // saved.add(linkTo(methodOn(FilePDFController.class).getImageWithMediaType(saved.getUuid().toString(), 1)).withSelfRel());
         
         return ResponseEntity.ok(saved);
     }

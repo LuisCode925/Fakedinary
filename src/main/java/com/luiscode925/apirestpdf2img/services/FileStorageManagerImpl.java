@@ -1,25 +1,24 @@
 package com.luiscode925.apirestpdf2img.services;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.stream.Stream;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.util.FileSystemUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.luiscode925.apirestpdf2img.exception.StorageException;
 import com.luiscode925.apirestpdf2img.exception.StorageFileNotFoundException;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.stream.Stream;
 
 @Service
 public class FileStorageManagerImpl implements FileStorageManger {
@@ -34,17 +33,6 @@ public class FileStorageManagerImpl implements FileStorageManger {
         }
         this.rootLocation = Paths.get(properties.getLocation());
     }
-
-    /*
-     * @Async
-     * 
-     * @SneakyThrows
-     * public void save(MultipartFile file) {
-     * Thread.sleep(new Random().nextLong(4000, 8000));
-     * System.out.println(file.getOriginalFilename() + " is uploaded at " +
-     * LocalDateTime.now());
-     * }
-     */
 
     @Override
     public void deleteAll() {

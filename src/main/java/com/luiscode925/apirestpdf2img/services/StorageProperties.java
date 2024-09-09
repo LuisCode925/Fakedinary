@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class StorageProperties {
 
     // Cambiar a variable de entorno del sistema
-    private String location = "/pdf-utils/upload-dir";
+    private String location = "pdf-utils/upload-dir";
 
     public String getLocation() {
         return location;
