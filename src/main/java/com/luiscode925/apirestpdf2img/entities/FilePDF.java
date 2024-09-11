@@ -23,7 +23,6 @@ import lombok.Setter;
 @Getter @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-
 @Entity
 public class FilePDF extends RepresentationModel<FilePDF>{
 
@@ -43,5 +42,4 @@ public class FilePDF extends RepresentationModel<FilePDF>{
 
     @Builder.Default
     private LocalDateTime uploadAt = LocalDateTime.now();
-    
 }

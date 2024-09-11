@@ -44,7 +44,7 @@ public class HandlerExceptionController {
     @ExceptionHandler(NotAllowedFileException.class)
     public ResponseEntity<Map<String, String>> failToUpload(NotAllowedFileException ex) {
         Map<String, String> errores = new HashMap<>();
-        errores.put("message", "Ha ocurrido problema con la extension.");
+        errores.put("message", "Ha ocurrido problema con la extension de sus archivos.");
         errores.put("Exception", ex.getMessage());
         errores.put("date", LocalDateTime.now().toString());
         return ResponseEntity.badRequest().body(errores);

@@ -60,11 +60,11 @@ public class FilePDFController {
 
     @Autowired
     FileStorageManger fileStorageManger;
+    private FilePDF filePDF;
 
     // En caso de haber mas campos en el formulario se agregarían
     @PostMapping("/upload")
-    public ResponseEntity<?> handleFileUpload(@RequestParam("file") MultipartFile file)
-            throws IOException {
+    public ResponseEntity<?> handleFileUpload(@RequestParam("file") MultipartFile file) throws IOException {
 
         fileValidator(file);
 
@@ -83,7 +83,6 @@ public class FilePDFController {
         FilePDF saved = filePDFRepository.save(pdf_info);
 
         fileStorageManger.store(file, uuid.toString());
-        // if (System.getProperty("os.name").contains("Windows")) {}
 
         // serveFile -> Enlace para ver el pdf
         saved.add(linkTo(methodOn(FilePDFController.class).serveFile(saved.getUuid().toString())).withSelfRel());
@@ -91,8 +90,18 @@ public class FilePDFController {
         // extractText -> para que te mande el texto del documento.
         saved.add(linkTo(methodOn(FilePDFController.class).extractText(saved.getUuid().toString())).withSelfRel());
 
-        // saved.add(linkTo(methodOn(FilePDFController.class).getImageWithMediaType(saved.getUuid().toString(), 1)).withSelfRel());
-        
+        /*
+         * saved.add(
+         * linkTo(
+         * methodOn(FilePDFController.class)
+         * .showImageWithMediaType(saved.getUuid().toString(), 1)
+         * 
+         * )
+         * .withRel("images")
+         * );
+         * 
+         */
+
         return ResponseEntity.ok(saved);
     }
 
@@ -131,7 +140,7 @@ public class FilePDFController {
     @GetMapping("/{filename}")
     public ResponseEntity<Resource> serveFile(@PathVariable String filename) {
 
-        Resource file = fileStorageManger.loadAsResource(filename+".pdf");
+        Resource file = fileStorageManger.loadAsResource(filename + ".pdf");
 
         if (file == null)
             return ResponseEntity.notFound().build();
@@ -141,14 +150,14 @@ public class FilePDFController {
     }
 
     @GetMapping(value = "/{filename}/{page}", produces = MediaType.IMAGE_JPEG_VALUE)
-    public @ResponseBody byte[] getImageWithMediaType(@PathVariable String filename, @PathVariable int page)
+    public @ResponseBody byte[] showImageWithMediaType(@PathVariable String filename, @PathVariable int page)
             throws IOException {
 
-        Path path = Paths.get(String.format("upload-dir/%s-%d.jpg", filename, page));
+        Path path = Paths.get(String.format("pdf-utils/upload-dir/%s-%d.jpg", filename, page));
 
         // Regresar la imagen si ya existe en la carpeta.
         if (path.toFile().isFile()) {
-            File inFolderImg = FileUtils.getFile(String.format("upload-dir/%s-%d.jpg", filename, page));
+            File inFolderImg = FileUtils.getFile(String.format("pdf-utils/upload-dir/%s-%d.jpg", filename, page));
             InputStream targetStream = FileUtils.openInputStream(inFolderImg);
             return IOUtils.toByteArray(targetStream);
         }
@@ -159,7 +168,7 @@ public class FilePDFController {
 
         BufferedImage image = renderer.renderImageWithDPI(page, 300, ImageType.RGB);
 
-        String imageName = String.format("upload-dir/" + filename + "-%d.jpg", page);
+        String imageName = String.format("pdf-utils/upload-dir/" + filename + "-%d.jpg", page);
         File outputFile = new File(imageName);
         ImageIO.write(image, "jpg", outputFile);
 
