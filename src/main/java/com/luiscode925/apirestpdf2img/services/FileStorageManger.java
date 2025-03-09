@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.util.stream.Stream;
 
 public interface FileStorageManger {
+
     void init();
 
     void store(MultipartFile file, String uuid);
@@ -18,4 +19,5 @@ public interface FileStorageManger {
     Resource loadAsResource(String filename);
 
     void deleteAll();
+    
 }

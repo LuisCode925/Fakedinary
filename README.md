@@ -5,7 +5,7 @@ generar imágenes a partir de sus paginas.
 
 Un solo archivo:
 ```
-curl -X POST -F "file=@PATH/FILE.pdf" http://localhost:8080/pdf/upload
+curl -X POST -F "file=@Linux Device Drivers.3rd.Edition.pdf" http://localhost:8080/pdf/upload
 ```
 
 Multiples archivos:
@@ -18,12 +18,12 @@ realizar las operaciones extraer el texto y generar imágenes de la paginas:
 ```
 {
    "uuid":"40bb3fe6-6857-4076-91b0-c9332c91b95b",
-   "origName":"Difference-Between-ML-DL-AI.pdf",
+   "originalName":"Difference-Between-ML-DL-AI.pdf",
    "fileSize":229386,
    "contentType":"application/pdf",
-   "numPages":3,
+   "totalPages":3,
    "deleted":false,
-   "uploadAt":"2024-09-09T09:39:49.149091143",
+   "uploadedAt":"2024-09-09T09:39:49.149091143",
    "_links":{
       "self":[
          {
@@ -48,3 +48,5 @@ docker run -p 80:8080 fake-cloudinary:1.0 -d
 docker exec -ti 1c88589eeadd /bin/ash
 
 docker rmi _hash_ V para remover imágenes
+
+docker rm -f $(docker ps -a -q --filter "status=exited")

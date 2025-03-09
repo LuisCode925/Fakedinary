@@ -29,7 +29,7 @@ public class FileStorageManagerImpl implements FileStorageManger {
 
     public FileStorageManagerImpl(StorageProperties properties) {
         if (properties.getLocation().trim().length() == 0) {
-            throw new StorageException("La ruta para los archivos subidos no puede estar vacía.");
+            throw new StorageException("La ruta para los archivos no ha sido definida.");
         }
         this.rootLocation = Paths.get(properties.getLocation());
     }
@@ -68,7 +68,7 @@ public class FileStorageManagerImpl implements FileStorageManger {
     @Override
     public Resource loadAsResource(String filename) {
         try {
-            logger.info("Nombre del archivo: " + filename);
+            logger.info("File name: " + filename);
             Path file = load(filename);
             Resource resource = new UrlResource(file.toUri());
             if (resource.exists() || resource.isReadable()) {

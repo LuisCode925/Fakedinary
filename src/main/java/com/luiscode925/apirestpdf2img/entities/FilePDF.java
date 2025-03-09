@@ -12,7 +12,6 @@ import org.springframework.hateoas.RepresentationModel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -22,24 +21,27 @@ import lombok.Setter;
 @Builder
 @Getter @Setter
 @AllArgsConstructor
-@NoArgsConstructor
 @Entity
 public class FilePDF extends RepresentationModel<FilePDF>{
 
     @Id
     private UUID uuid;
 
-    private String origName;
+    private String originalName;
 
     private Long fileSize;
 
     private String contentType;
 
-    private Integer numPages;
+    private Integer totalPages;
 
-    @Builder.Default
-    private boolean deleted = false;
+    private boolean deleted;
 
-    @Builder.Default
-    private LocalDateTime uploadAt = LocalDateTime.now();
+    private LocalDateTime uploadedAt;
+
+    public FilePDF(){
+        this.uuid = UUID.randomUUID();
+        this.deleted = false;
+        this.uploadedAt = LocalDateTime.now();
+    }
 }

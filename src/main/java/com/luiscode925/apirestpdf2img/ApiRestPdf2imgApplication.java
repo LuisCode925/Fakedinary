@@ -18,7 +18,7 @@ public class ApiRestPdf2imgApplication {
 	}
 
 	@Bean
-	CommandLineRunner init(FileStorageManger fileStorageManger) {
+	CommandLineRunner initFileManager(FileStorageManger fileStorageManger) {
 		return (args) -> {
 			fileStorageManger.deleteAll();
 			fileStorageManger.init();

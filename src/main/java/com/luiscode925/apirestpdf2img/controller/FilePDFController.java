@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import javax.imageio.ImageIO;
@@ -56,119 +57,102 @@ public class FilePDFController {
     private static final List<String> LIST_OF_ALLOWED_EXTENSIONS = List.of("pdf");
 
     @Autowired
-    FilePDFRepository filePDFRepository;
+    FilePDFRepository pdfRepository;
 
     @Autowired
-    FileStorageManger fileStorageManger;
-    private FilePDF filePDF;
+    FileStorageManger fileManger;
 
-    // En caso de haber mas campos en el formulario se agregarían
     @PostMapping("/upload")
-    public ResponseEntity<?> handleFileUpload(@RequestParam("file") MultipartFile file) throws IOException {
+    public ResponseEntity<?> handleFileUpload(@RequestParam("file") MultipartFile requestFile) throws IOException {
 
-        fileValidator(file);
+        fileValidator(requestFile);
 
         // Obteniendo el numero de paginas.
-        PDDocument uploaded_pdf = PDDocument.load(file.getBytes());
-        int num_pages = uploaded_pdf.getNumberOfPages();
-
+        PDDocument pdf = PDDocument.load(requestFile.getBytes());
+        
+        // Obteniendo la informacion del pdf para la base de datos
         FilePDF pdf_info = new FilePDF();
-        UUID uuid = UUID.randomUUID();
-        pdf_info.setUuid(uuid);
-        pdf_info.setOrigName(file.getOriginalFilename());
-        pdf_info.setFileSize(file.getSize());
-        pdf_info.setContentType(file.getContentType());
-        pdf_info.setNumPages(num_pages);
+        pdf_info.setOriginalName(requestFile.getOriginalFilename());
+        pdf_info.setFileSize(requestFile.getSize());
+        pdf_info.setContentType(requestFile.getContentType());
+        pdf_info.setTotalPages(pdf.getNumberOfPages());
 
-        FilePDF saved = filePDFRepository.save(pdf_info);
+        // Guardando la informacion en la base de datos y moviendo el archivo
+        FilePDF saved = pdfRepository.save(pdf_info);
+        fileManger.store(requestFile, pdf_info.getUuid().toString());
 
-        fileStorageManger.store(file, uuid.toString());
-
-        // serveFile -> Enlace para ver el pdf
         saved.add(linkTo(methodOn(FilePDFController.class).serveFile(saved.getUuid().toString())).withSelfRel());
-
-        // extractText -> para que te mande el texto del documento.
         saved.add(linkTo(methodOn(FilePDFController.class).extractText(saved.getUuid().toString())).withSelfRel());
 
-        /*
-         * saved.add(
-         * linkTo(
-         * methodOn(FilePDFController.class)
-         * .showImageWithMediaType(saved.getUuid().toString(), 1)
-         * 
-         * )
-         * .withRel("images")
-         * );
-         * 
-         */
+        // TODO: enviar todas las imagenes de las paginas del libro.
 
         return ResponseEntity.ok(saved);
     }
 
     @PostMapping("/upload-multiple")
-    public ResponseEntity<?> handleFileUploadMultiple(@RequestParam("files") MultipartFile[] files)
-            throws IOException {
+    public ResponseEntity<?> handleFileUploadMultiple(@RequestParam("files") MultipartFile[] arrayRequestFiles) throws IOException {
 
         List<FilePDF> archivos = new ArrayList<FilePDF>();
 
-        for (MultipartFile file : files) {
+        for (MultipartFile requestFile : arrayRequestFiles) {
 
-            fileValidator(file);
+            fileValidator(requestFile);
 
             // Obteniendo el numero de paginas.
-            PDDocument uploaded_pdf = PDDocument.load(file.getBytes());
-            int num_pages = uploaded_pdf.getNumberOfPages();
-
+            PDDocument pdf = PDDocument.load(requestFile.getBytes());
+    
+            // Obteniendo la informacion del pdf para la base de datos
             FilePDF pdf_info = new FilePDF();
-            UUID uuid = UUID.randomUUID();
-            pdf_info.setUuid(uuid);
-            pdf_info.setOrigName(file.getOriginalFilename());
-            pdf_info.setFileSize(file.getSize());
-            pdf_info.setContentType(file.getContentType());
-            pdf_info.setNumPages(num_pages);
+            pdf_info.setOriginalName(requestFile.getOriginalFilename());
+            pdf_info.setFileSize(requestFile.getSize());
+            pdf_info.setContentType(requestFile.getContentType());
+            pdf_info.setTotalPages(pdf.getNumberOfPages());
 
+            fileManger.store(requestFile, pdf_info.getUuid().toString());
+        
             archivos.add(pdf_info);
-
-            fileStorageManger.store(file, uuid.toString());
-            // if (System.getProperty("os.name").contains("Windows")) {}
-
         }
-        return ResponseEntity.ok(filePDFRepository.saveAll(archivos));
+
+        archivos = pdfRepository.saveAll(archivos);
+
+        return ResponseEntity.ok(archivos);
     }
 
     @ResponseBody
-    @GetMapping("/{filename}")
-    public ResponseEntity<Resource> serveFile(@PathVariable String filename) {
+    @GetMapping("/{uuid}")
+    public ResponseEntity<Resource> serveFile(@PathVariable String uuid) {
+        Resource file = fileManger.loadAsResource(String.format("%s.pdf", uuid));
+        Optional<FilePDF> pdf_info = pdfRepository.findById(UUID.fromString(uuid));
 
-        Resource file = fileStorageManger.loadAsResource(filename + ".pdf");
-
-        if (file == null)
+        if (file == null){
             return ResponseEntity.notFound().build();
+        }
 
-        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
-                "attachment; filename=\"" + file.getFilename() + "\"").body(file);
+        return ResponseEntity.ok().header(
+            HttpHeaders.CONTENT_DISPOSITION, 
+            String.format("attachment; filename=\"%s\"", pdf_info.get().getOriginalName())
+        ).body(file);
     }
 
-    @GetMapping(value = "/{filename}/{page}", produces = MediaType.IMAGE_JPEG_VALUE)
-    public @ResponseBody byte[] showImageWithMediaType(@PathVariable String filename, @PathVariable int page)
-            throws IOException {
+    @GetMapping(value = "/{uuid}/{page}", produces = MediaType.IMAGE_JPEG_VALUE)
+    public @ResponseBody byte[] showImageWithMediaType(@PathVariable String uuid, @PathVariable int page) throws IOException {
 
-        Path path = Paths.get(String.format("pdf-utils/upload-dir/%s-%d.jpg", filename, page));
+        Path path = Paths.get(String.format("upload-dir/%s-%d.jpg", uuid, page));
 
         // Regresar la imagen si ya existe en la carpeta.
         if (path.toFile().isFile()) {
-            File inFolderImg = FileUtils.getFile(String.format("pdf-utils/upload-dir/%s-%d.jpg", filename, page));
+            File inFolderImg = FileUtils.getFile(String.format("upload-dir/%s-%d.jpg", uuid, page));
             InputStream targetStream = FileUtils.openInputStream(inFolderImg);
             return IOUtils.toByteArray(targetStream);
         }
 
-        Resource file = fileStorageManger.loadAsResource(filename + ".pdf");
+        Resource file = fileManger.loadAsResource(String.format("%s.pdf", uuid));
         PDDocument pdf2img = PDDocument.load(file.getFile());
         PDFRenderer renderer = new PDFRenderer(pdf2img);
 
         BufferedImage image = renderer.renderImageWithDPI(page, 300, ImageType.RGB);
 
-        String imageName = String.format("pdf-utils/upload-dir/" + filename + "-%d.jpg", page);
+        String imageName = String.format("upload-dir/%s-%d.jpg", uuid, page);
         File outputFile = new File(imageName);
         ImageIO.write(image, "jpg", outputFile);
 
@@ -176,53 +160,54 @@ public class FilePDFController {
         return IOUtils.toByteArray(targetStream);
     }
 
-    @GetMapping("/{filename}/extract-text")
-    public ResponseEntity<?> extractText(@PathVariable String filename) throws IOException {
+    @GetMapping("/{uuid}/extract-text")
+    public ResponseEntity<?> extractText(@PathVariable String uuid) throws IOException {
 
-        Map<String, String> response = new HashMap<String, String>();
+        Optional<FilePDF> pdf_info = pdfRepository.findById(UUID.fromString(uuid));
+        
+        if (pdf_info.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        File pdf = FileUtils.getFile(String.format("upload-dir/%s.pdf", uuid));
 
-        response.put("file", filename);
-        File pdfExtractText = FileUtils.getFile(String.format("upload-dir/%s.pdf", filename));
-        PDFParser parser = new PDFParser(new RandomAccessFile(pdfExtractText, "r"));
-
+        PDFParser parser = new PDFParser(new RandomAccessFile(pdf, "r"));
         parser.parse();
+
         COSDocument cosDoc = parser.getDocument();
         PDFTextStripper pdfStripper = new PDFTextStripper();
-
+        
         PDDocument pdDoc = new PDDocument(cosDoc);
         pdfStripper.setStartPage(0);
-        response.put("start_at", "0");
         pdfStripper.setEndPage(pdDoc.getNumberOfPages());
-        response.put("end_at", "" + pdDoc.getNumberOfPages());
-        String pdf_text = pdfStripper.getText(pdDoc);
-        response.put("text", pdf_text);
+        
+        String documentText = pdfStripper.getText(pdDoc);
         pdDoc.close();
+        
+        // Response Body
+        Map<String, String> response = new HashMap<String, String>();
+        response.put("file", pdf_info.get().getOriginalName());
+        response.put("totalPages", ""+pdDoc.getNumberOfPages());
+        response.put("text", documentText);
 
         return ResponseEntity.ok().body(response);
     }
 
-    @SuppressWarnings("null")
     public static void fileValidator(MultipartFile file) {
 
         if (file.isEmpty()) {
-            throw new EmptyFileException(
-                    "No se ha elegido ningún archivo en el formulario o el archivo elegido no tiene contenido.");
+            throw new EmptyFileException("No se ha elegido ningún archivo en el formulario o el archivo elegido no tiene contenido.");
         }
 
-        int index = file.getOriginalFilename().lastIndexOf('.');
-
-        if (index > 0) {
-            String extension = FilenameUtils.getExtension(file.getOriginalFilename());
-            if (LIST_OF_ALLOWED_EXTENSIONS.contains(extension) == false) {
-                throw new NotAllowedFileException(
-                        "Invalid file format. Only these files are allowed: " + LIST_OF_ALLOWED_EXTENSIONS);
-            }
-        }
-
-        long fileSize = file.getSize();
-        if (fileSize <= MIN_FILE_SIZE) {
+        if (file.getSize() <= MIN_FILE_SIZE) {
             throw new MinFileSizeException("El archivo no supera en mínimo tamaño, para ser procesado.");
         }
+       
+        String extension = FilenameUtils.getExtension(file.getOriginalFilename());
+        if (LIST_OF_ALLOWED_EXTENSIONS.contains(extension) == false) {
+            throw new NotAllowedFileException("Formato de archivo invalido. Solo se permiten estos archivos: " + LIST_OF_ALLOWED_EXTENSIONS);
+        }
+        
     }
 
 }
