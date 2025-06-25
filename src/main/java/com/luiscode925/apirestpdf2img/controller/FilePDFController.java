@@ -25,6 +25,7 @@ import org.apache.pdfbox.cos.COSDocument;
 import org.apache.pdfbox.io.RandomAccessFile;
 import org.apache.pdfbox.pdfparser.PDFParser;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
@@ -43,7 +44,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.luiscode925.apirestpdf2img.entities.FilePDF;
+import com.luiscode925.apirestpdf2img.entities.TextResponse;
 import com.luiscode925.apirestpdf2img.exception.EmptyFileException;
+import com.luiscode925.apirestpdf2img.exception.FileWithPassException;
 import com.luiscode925.apirestpdf2img.exception.MinFileSizeException;
 import com.luiscode925.apirestpdf2img.exception.NotAllowedFileException;
 import com.luiscode925.apirestpdf2img.repository.FilePDFRepository;
@@ -63,59 +66,44 @@ public class FilePDFController {
     FileStorageManger fileManger;
 
     @PostMapping("/upload")
-    public ResponseEntity<?> handleFileUpload(@RequestParam("file") MultipartFile requestFile) throws IOException {
+    public ResponseEntity<?> handleFileUpload(@RequestParam("file") MultipartFile requestFile) throws Exception {
 
+        // Validacion 
         fileValidator(requestFile);
 
-        // Obteniendo el numero de paginas.
-        PDDocument pdf = PDDocument.load(requestFile.getBytes());
-        
-        // Obteniendo la informacion del pdf para la base de datos
-        FilePDF pdf_info = new FilePDF();
-        pdf_info.setOriginalName(requestFile.getOriginalFilename());
-        pdf_info.setFileSize(requestFile.getSize());
-        pdf_info.setContentType(requestFile.getContentType());
-        pdf_info.setTotalPages(pdf.getNumberOfPages());
+        // Extraccion de la informacion 
+        FilePDF saved = pdfRepository.save(extractInformation(requestFile, requestFile.getOriginalFilename()));
 
-        // Guardando la informacion en la base de datos y moviendo el archivo
-        FilePDF saved = pdfRepository.save(pdf_info);
-        fileManger.store(requestFile, pdf_info.getUuid().toString());
+        // Mover el archivo a el directorio 
+        fileManger.store(requestFile, saved.getUuid().toString());
 
+        // Links HATEOAS
         saved.add(linkTo(methodOn(FilePDFController.class).serveFile(saved.getUuid().toString())).withSelfRel());
-        saved.add(linkTo(methodOn(FilePDFController.class).extractText(saved.getUuid().toString())).withSelfRel());
-
-        // TODO: enviar todas las imagenes de las paginas del libro.
+        saved.add(linkTo(methodOn(FilePDFController.class).extractText(saved.getUuid().toString())).withRel("extractText"));
 
         return ResponseEntity.ok(saved);
     }
 
     @PostMapping("/upload-multiple")
-    public ResponseEntity<?> handleFileUploadMultiple(@RequestParam("files") MultipartFile[] arrayRequestFiles) throws IOException {
+    public ResponseEntity<?> handleFileUploadMultiple(@RequestParam("files") MultipartFile[] multipleFiles) throws Exception {
 
-        List<FilePDF> archivos = new ArrayList<FilePDF>();
+        List<FilePDF> response = new ArrayList<FilePDF>();
 
-        for (MultipartFile requestFile : arrayRequestFiles) {
-
-            fileValidator(requestFile);
-
-            // Obteniendo el numero de paginas.
-            PDDocument pdf = PDDocument.load(requestFile.getBytes());
-    
-            // Obteniendo la informacion del pdf para la base de datos
-            FilePDF pdf_info = new FilePDF();
-            pdf_info.setOriginalName(requestFile.getOriginalFilename());
-            pdf_info.setFileSize(requestFile.getSize());
-            pdf_info.setContentType(requestFile.getContentType());
-            pdf_info.setTotalPages(pdf.getNumberOfPages());
-
-            fileManger.store(requestFile, pdf_info.getUuid().toString());
-        
-            archivos.add(pdf_info);
+        for (MultipartFile singleFile : multipleFiles) {
+            fileValidator(singleFile);
+            FilePDF saved = pdfRepository.save(extractInformation(singleFile, singleFile.getOriginalFilename()));
+            fileManger.store(singleFile, saved.getUuid().toString());
+            response.add(saved);
         }
 
-        archivos = pdfRepository.saveAll(archivos);
+        for (FilePDF filePDF : response) {
+            filePDF.add(linkTo(methodOn(FilePDFController.class).serveFile(filePDF.getUuid().toString())).withSelfRel());
+            filePDF.add(linkTo(methodOn(FilePDFController.class).extractText(filePDF.getUuid().toString())).withRel("extractText"));
+        }
 
-        return ResponseEntity.ok(archivos);
+        //TODO: utilizar en vez de uno por uno? pdfRepository.saveAll(null);
+
+        return ResponseEntity.ok(response);
     }
 
     @ResponseBody
@@ -161,39 +149,64 @@ public class FilePDFController {
     }
 
     @GetMapping("/{uuid}/extract-text")
-    public ResponseEntity<?> extractText(@PathVariable String uuid) throws IOException {
+    public ResponseEntity<TextResponse> extractText(@PathVariable String uuid){
 
-        Optional<FilePDF> pdf_info = pdfRepository.findById(UUID.fromString(uuid));
+        Optional<FilePDF> pdfInfo = pdfRepository.findById(UUID.fromString(uuid));
         
-        if (pdf_info.isEmpty()) {
+        if (pdfInfo.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
         
-        File pdf = FileUtils.getFile(String.format("upload-dir/%s.pdf", uuid));
+        TextResponse response = new TextResponse();
 
-        PDFParser parser = new PDFParser(new RandomAccessFile(pdf, "r"));
-        parser.parse();
+        try {
 
-        COSDocument cosDoc = parser.getDocument();
-        PDFTextStripper pdfStripper = new PDFTextStripper();
-        
-        PDDocument pdDoc = new PDDocument(cosDoc);
-        pdfStripper.setStartPage(0);
-        pdfStripper.setEndPage(pdDoc.getNumberOfPages());
-        
-        String documentText = pdfStripper.getText(pdDoc);
-        pdDoc.close();
-        
-        // Response Body
-        Map<String, String> response = new HashMap<String, String>();
-        response.put("file", pdf_info.get().getOriginalName());
-        response.put("totalPages", ""+pdDoc.getNumberOfPages());
-        response.put("text", documentText);
+            response.setFile(pdfInfo.get().getOriginalName());
+            response.setTotalPages(pdfInfo.get().getTotalPages());
+            response.setUploadedAt(pdfInfo.get().getUploadedAt());
 
-        return ResponseEntity.ok().body(response);
+            File pdf = FileUtils.getFile(String.format("upload-dir/%s.pdf", uuid));
+
+            PDFParser parser = new PDFParser(new RandomAccessFile(pdf, "r"));
+            parser.parse();
+
+            COSDocument cosDoc = parser.getDocument();
+            PDFTextStripper pdfStripper = new PDFTextStripper();
+            
+            PDDocument pdDoc = new PDDocument(cosDoc);
+            pdfStripper.setStartPage(0);
+            pdfStripper.setEndPage(pdDoc.getNumberOfPages());
+            
+            String documentText = pdfStripper.getText(pdDoc);
+
+            response.setText(documentText);
+            pdDoc.close();
+
+        } catch (Exception e) {
+            // TODO: Error al extraer la informacion.
+        }
+        
+        return ResponseEntity.ok(response);
     }
 
-    public static void fileValidator(MultipartFile file) {
+    public static FilePDF extractInformation(MultipartFile file, String uploadName) throws Exception{
+        FilePDF pdfInfo = new FilePDF();
+        try {
+            PDDocument pdfBox = PDDocument.load(file.getBytes());
+            // PDDocumentInformation information = pdfBox.getDocumentInformation();
+        
+            pdfInfo.setOriginalName(uploadName);
+            pdfInfo.setFileSize(file.getSize());
+            pdfInfo.setContentType(file.getContentType());
+            pdfInfo.setTotalPages(pdfBox.getNumberOfPages());
+            pdfBox.close();
+        } catch (IOException e) {
+            e.printStackTrace(); // TODO: lanzar un error personalizado
+        }         
+        return pdfInfo;
+    }
+
+    public static void fileValidator(MultipartFile file) throws IOException {
 
         if (file.isEmpty()) {
             throw new EmptyFileException("No se ha elegido ningún archivo en el formulario o el archivo elegido no tiene contenido.");
@@ -207,7 +220,12 @@ public class FilePDFController {
         if (LIST_OF_ALLOWED_EXTENSIONS.contains(extension) == false) {
             throw new NotAllowedFileException("Formato de archivo invalido. Solo se permiten estos archivos: " + LIST_OF_ALLOWED_EXTENSIONS);
         }
-        
+
+        PDDocument pdfBox = PDDocument.load(file.getBytes());
+        if (pdfBox.isEncrypted()) {
+            pdfBox.close();
+            throw new FileWithPassException("El Documento esta protegido con una contraseña.");
+        }    
     }
 
 }
