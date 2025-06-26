@@ -10,22 +10,17 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import javax.imageio.ImageIO;
 
+import org.apache.pdfbox.Loader;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.pdfbox.cos.COSDocument;
-import org.apache.pdfbox.io.RandomAccessFile;
-import org.apache.pdfbox.pdfparser.PDFParser;
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
@@ -135,7 +130,7 @@ public class FilePDFController {
         }
 
         Resource file = fileManger.loadAsResource(String.format("%s.pdf", uuid));
-        PDDocument pdf2img = PDDocument.load(file.getFile());
+        PDDocument pdf2img = Loader.loadPDF(file.getFile());
         PDFRenderer renderer = new PDFRenderer(pdf2img);
 
         BufferedImage image = renderer.renderImageWithDPI(page, 300, ImageType.RGB);
@@ -166,21 +161,13 @@ public class FilePDFController {
             response.setUploadedAt(pdfInfo.get().getUploadedAt());
 
             File pdf = FileUtils.getFile(String.format("upload-dir/%s.pdf", uuid));
+            PDDocument pdfDoc = Loader.loadPDF(pdf);
 
-            PDFParser parser = new PDFParser(new RandomAccessFile(pdf, "r"));
-            parser.parse();
-
-            COSDocument cosDoc = parser.getDocument();
             PDFTextStripper pdfStripper = new PDFTextStripper();
-            
-            PDDocument pdDoc = new PDDocument(cosDoc);
-            pdfStripper.setStartPage(0);
-            pdfStripper.setEndPage(pdDoc.getNumberOfPages());
-            
-            String documentText = pdfStripper.getText(pdDoc);
+            String documentText = pdfStripper.getText(pdfDoc);
 
             response.setText(documentText);
-            pdDoc.close();
+            pdfDoc.close();
 
         } catch (Exception e) {
             // TODO: Error al extraer la informacion.
@@ -192,7 +179,7 @@ public class FilePDFController {
     public static FilePDF extractInformation(MultipartFile file, String uploadName) throws Exception{
         FilePDF pdfInfo = new FilePDF();
         try {
-            PDDocument pdfBox = PDDocument.load(file.getBytes());
+            PDDocument pdfBox = Loader.loadPDF(file.getBytes());
             // PDDocumentInformation information = pdfBox.getDocumentInformation();
         
             pdfInfo.setOriginalName(uploadName);
@@ -221,7 +208,8 @@ public class FilePDFController {
             throw new NotAllowedFileException("Formato de archivo invalido. Solo se permiten estos archivos: " + LIST_OF_ALLOWED_EXTENSIONS);
         }
 
-        PDDocument pdfBox = PDDocument.load(file.getBytes());
+        // PDDocument pdfBox = PDDocument.load(file.getBytes());
+        PDDocument pdfBox = Loader.loadPDF(file.getBytes());
         if (pdfBox.isEncrypted()) {
             pdfBox.close();
             throw new FileWithPassException("El Documento esta protegido con una contraseña.");
