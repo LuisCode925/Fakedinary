@@ -1,28 +1,23 @@
 
 package com.luiscode925.apirestpdf2img.entities;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import org.springframework.hateoas.RepresentationModel;
-
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
-/**
- *
- * @author Luis
- */
-@Builder
 @Getter @Setter
 @AllArgsConstructor
 @Entity
-public class FilePDF extends RepresentationModel<FilePDF>{
+public class FilePDF {
 
     @Id
     private UUID uuid;
@@ -38,6 +33,10 @@ public class FilePDF extends RepresentationModel<FilePDF>{
     private boolean deleted;
 
     private LocalDateTime uploadedAt;
+    
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "metadata")
+    private MetaInfo metadata;
 
     public FilePDF(){
         this.uuid = UUID.randomUUID();

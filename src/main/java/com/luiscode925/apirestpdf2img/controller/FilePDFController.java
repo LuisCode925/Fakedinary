@@ -1,8 +1,5 @@
 package com.luiscode925.apirestpdf2img.controller;
 
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
-
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -10,16 +7,21 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.imageio.ImageIO;
 
 import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.cos.COSName;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.fontbox.FontBoxFont;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
@@ -39,13 +41,22 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.luiscode925.apirestpdf2img.entities.FilePDF;
+import com.luiscode925.apirestpdf2img.entities.MetaInfo;
+import com.luiscode925.apirestpdf2img.entities.PDFSize;
 import com.luiscode925.apirestpdf2img.entities.TextResponse;
 import com.luiscode925.apirestpdf2img.exception.EmptyFileException;
 import com.luiscode925.apirestpdf2img.exception.FileWithPassException;
 import com.luiscode925.apirestpdf2img.exception.MinFileSizeException;
 import com.luiscode925.apirestpdf2img.exception.NotAllowedFileException;
+import com.luiscode925.apirestpdf2img.mappers.FilePDFMapper;
 import com.luiscode925.apirestpdf2img.repository.FilePDFRepository;
 import com.luiscode925.apirestpdf2img.services.FileStorageManger;
+import com.luiscode925.apirestpdf2img.utils.DateTimeConverter;
+import org.apache.pdfbox.pdmodel.PDDocumentInformation;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.pdfbox.pdmodel.font.PDTrueTypeFont;
 
 @RestController
 @RequestMapping("/pdf")
@@ -59,6 +70,9 @@ public class FilePDFController {
 
     @Autowired
     FileStorageManger fileManger;
+    
+    @Autowired
+    FilePDFMapper FilePDFMapper;
 
     @PostMapping("/upload")
     public ResponseEntity<?> handleFileUpload(@RequestParam("file") MultipartFile requestFile) throws Exception {
@@ -72,11 +86,7 @@ public class FilePDFController {
         // Mover el archivo a el directorio 
         fileManger.store(requestFile, saved.getUuid().toString());
 
-        // Links HATEOAS
-        saved.add(linkTo(methodOn(FilePDFController.class).serveFile(saved.getUuid().toString())).withSelfRel());
-        saved.add(linkTo(methodOn(FilePDFController.class).extractText(saved.getUuid().toString())).withRel("extractText"));
-
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.ok(FilePDFMapper.toFilePDFResponse(saved));
     }
 
     @PostMapping("/upload-multiple")
@@ -86,19 +96,14 @@ public class FilePDFController {
 
         for (MultipartFile singleFile : multipleFiles) {
             fileValidator(singleFile);
-            FilePDF saved = pdfRepository.save(extractInformation(singleFile, singleFile.getOriginalFilename()));
+            FilePDF saved = extractInformation(singleFile, singleFile.getOriginalFilename());
             fileManger.store(singleFile, saved.getUuid().toString());
             response.add(saved);
         }
+ 
+        List<FilePDF> repositoryResponse = pdfRepository.saveAll(response);
 
-        for (FilePDF filePDF : response) {
-            filePDF.add(linkTo(methodOn(FilePDFController.class).serveFile(filePDF.getUuid().toString())).withSelfRel());
-            filePDF.add(linkTo(methodOn(FilePDFController.class).extractText(filePDF.getUuid().toString())).withRel("extractText"));
-        }
-
-        //TODO: utilizar en vez de uno por uno? pdfRepository.saveAll(null);
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(FilePDFMapper.toListResponse(repositoryResponse));
     }
 
     @ResponseBody
@@ -180,12 +185,44 @@ public class FilePDFController {
         FilePDF pdfInfo = new FilePDF();
         try {
             PDDocument pdfBox = Loader.loadPDF(file.getBytes());
-            // PDDocumentInformation information = pdfBox.getDocumentInformation();
         
             pdfInfo.setOriginalName(uploadName);
             pdfInfo.setFileSize(file.getSize());
             pdfInfo.setContentType(file.getContentType());
             pdfInfo.setTotalPages(pdfBox.getNumberOfPages());
+            
+            PDDocumentInformation metadata = pdfBox.getDocumentInformation();
+            MetaInfo meta = new MetaInfo();
+            meta.setAuthor(metadata.getAuthor());
+            // getCOSObject()
+            meta.setCreationDate(DateTimeConverter.toLocalDateTime(metadata.getCreationDate()));
+            meta.setCreator(metadata.getCreator());
+            // getCustomMetadataValue(String fieldName)
+            meta.setKeywords(metadata.getKeywords());
+            meta.setMetadataKeys(metadata.getMetadataKeys());
+            meta.setModificationDate(DateTimeConverter.toLocalDateTime(metadata.getModificationDate()));
+            meta.setProducer(metadata.getProducer());
+            // getPropertyStringValue(String propertyKey)
+            meta.setSubject(metadata.getSubject());
+            meta.setTitle(metadata.getTitle());
+            meta.setTrapped(metadata.getTrapped());
+            // Adicionales
+            meta.setPdfVersion(pdfBox.getVersion());
+            meta.setTotalPages(pdfBox.getNumberOfPages());
+
+            Set<PDFSize> allDimensions =  new HashSet<>();
+            for (PDPage page : pdfBox.getPages()) {
+                // TODO: Obtencion de las fuentes
+                // Obtencion de las medidas del docuemnto
+                PDRectangle box = page.getMediaBox();
+                PDFSize mediaBox = new PDFSize(box.getWidth(), box.getHeight());
+                allDimensions.add(mediaBox);
+            }
+            meta.setDimensions(allDimensions);
+
+
+            
+            pdfInfo.setMetadata(meta);
             pdfBox.close();
         } catch (IOException e) {
             e.printStackTrace(); // TODO: lanzar un error personalizado
