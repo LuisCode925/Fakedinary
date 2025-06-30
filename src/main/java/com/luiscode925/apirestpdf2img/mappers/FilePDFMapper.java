@@ -24,7 +24,9 @@ public interface FilePDFMapper {
     @Mapping(target="contentType", source="contentType")    
     @Mapping(target="totalPages", source="totalPages")    
     @Mapping(target="deleted", source="deleted")   
-    @Mapping(target="uploadedAt", source="uploadedAt")   
+    @Mapping(target="uploadedAt", source="uploadedAt")  
+    @Mapping(target="metadata", source="metadata") 
+    @Mapping(target="add", ignore = true) 
     FilePDFResponse toFilePDFResponse(FilePDF pdf);
 
     @AfterMapping

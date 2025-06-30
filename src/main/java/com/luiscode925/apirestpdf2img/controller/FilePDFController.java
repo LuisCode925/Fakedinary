@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -17,11 +16,9 @@ import java.util.UUID;
 import javax.imageio.ImageIO;
 
 import org.apache.pdfbox.Loader;
-import org.apache.pdfbox.cos.COSName;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.fontbox.FontBoxFont;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
@@ -55,8 +52,6 @@ import com.luiscode925.apirestpdf2img.utils.DateTimeConverter;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
-import org.apache.pdfbox.pdmodel.font.PDFont;
-import org.apache.pdfbox.pdmodel.font.PDTrueTypeFont;
 
 @RestController
 @RequestMapping("/pdf")
@@ -122,8 +117,8 @@ public class FilePDFController {
         ).body(file);
     }
 
-    @GetMapping(value = "/{uuid}/{page}", produces = MediaType.IMAGE_JPEG_VALUE)
-    public @ResponseBody byte[] showImageWithMediaType(@PathVariable String uuid, @PathVariable int page) throws IOException {
+    @GetMapping(value = "/{uuid}/{page}")
+    public ResponseEntity<?> showImageWithMediaType(@PathVariable String uuid, @PathVariable int page) throws IOException {
 
         Path path = Paths.get(String.format("upload-dir/%s-%d.jpg", uuid, page));
 
@@ -131,21 +126,30 @@ public class FilePDFController {
         if (path.toFile().isFile()) {
             File inFolderImg = FileUtils.getFile(String.format("upload-dir/%s-%d.jpg", uuid, page));
             InputStream targetStream = FileUtils.openInputStream(inFolderImg);
-            return IOUtils.toByteArray(targetStream);
+            return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_JPEG)
+                .body(IOUtils.toByteArray(targetStream));
         }
 
-        Resource file = fileManger.loadAsResource(String.format("%s.pdf", uuid));
-        PDDocument pdf2img = Loader.loadPDF(file.getFile());
-        PDFRenderer renderer = new PDFRenderer(pdf2img);
+        // TODO lanzar error con una pagina out of range
 
+        Resource file = fileManger.loadAsResource(String.format("%s.pdf", uuid));
+        PDDocument pdfBox = Loader.loadPDF(file.getFile());
+
+        // Renderizado de la imagen
+        PDFRenderer renderer = new PDFRenderer(pdfBox);
         BufferedImage image = renderer.renderImageWithDPI(page, 300, ImageType.RGB);
 
-        String imageName = String.format("upload-dir/%s-%d.jpg", uuid, page);
-        File outputFile = new File(imageName);
+        File outputFile = new File(String.format("upload-dir/%s-%d.jpg", uuid, page));
         ImageIO.write(image, "jpg", outputFile);
 
         InputStream targetStream = FileUtils.openInputStream(outputFile);
-        return IOUtils.toByteArray(targetStream);
+
+        pdfBox.close();
+
+        return ResponseEntity.ok()
+            .contentType(MediaType.IMAGE_JPEG)
+            .body(IOUtils.toByteArray(targetStream));
     }
 
     @GetMapping("/{uuid}/extract-text")
@@ -220,8 +224,6 @@ public class FilePDFController {
             }
             meta.setDimensions(allDimensions);
 
-
-            
             pdfInfo.setMetadata(meta);
             pdfBox.close();
         } catch (IOException e) {
