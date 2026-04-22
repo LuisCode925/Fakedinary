@@ -3,6 +3,7 @@ package dev.code925.pdf2img.mappers;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
+import dev.code925.pdf2img.controller.DownloadController;
 import dev.code925.pdf2img.controller.FileTextController;
 import org.mapstruct.*;
 
@@ -23,8 +24,8 @@ public interface FileMapper {
 
      @AfterMapping
      default void addLinksHATEOAS(File pdf, @MappingTarget FileResponse response) {
-         // Link self =linkTo(methodOn(UploadController.class).serveFile(pdf.getUuid().toString())).withSelfRel();
-      // response.add(self);
+         Link self =linkTo(methodOn(DownloadController.class).serveFile(pdf.getUuid().toString())).withRel("download");
+         response.add(self);
 
          try {
              Link thumbnailLink = linkTo(methodOn(ImageController.class).showImage(pdf.getUuid().toString(), 1)).withRel("thumbnail");

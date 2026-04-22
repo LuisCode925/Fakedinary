@@ -1,9 +1,11 @@
 package dev.code925.pdf2img.controller;
 
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import dev.code925.pdf2img.entities.DTO.FileResponse;
 import dev.code925.pdf2img.services.UploadService;
+import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -33,32 +35,23 @@ public class UploadController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response.get());
     }
 
+    @SneakyThrows
     @PostMapping("/upload-multiple")
-    public ResponseEntity<?> handleFileUploadMultiple(@RequestParam("files") MultipartFile[] multipleFiles)
-            throws Exception {
-        // Optional<?> response = this.uploadService.uploadMultipleFiles(multipleFiles);
-        // return ResponseEntity.ok(FilePDFMapper.toListResponse(repositoryResponse));
-        return ResponseEntity.status(HttpStatus.CREATED).body(null);
-    }
+    public ResponseEntity<?> handleFileUploadMultiple(@RequestParam("files") MultipartFile[] multipleFiles) throws Exception {
 
-    /*
-     * @ResponseBody
-     * 
-     * @GetMapping("/{uuid}")
-     * public ResponseEntity<Resource> serveFile(@PathVariable String uuid) {
-     * Resource file = fileManger.loadAsResource(String.format("%s.pdf", uuid));
-     * Optional<File> pdf_info = fileRepository.findById(UUID.fromString(uuid));
-     * 
-     * if (file == null){
-     * return ResponseEntity.notFound().build();
-     * }
-     * 
-     * return ResponseEntity.ok().header(
-     * HttpHeaders.CONTENT_DISPOSITION,
-     * String.format("attachment; filename=\"%s\"",
-     * pdf_info.get().getOriginalName())
-     * ).body(file);
-     * }
-     */
+        if(multipleFiles.length == 0){
+            Map<String, String> response = new HashMap<>();
+            response.put("message","Por favor, selecciona al menos un archivo.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+
+        Set<FileResponse> response = Arrays.stream(multipleFiles)
+                .map(this.uploadService::uploadSingleFile)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toSet());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
 
 }
