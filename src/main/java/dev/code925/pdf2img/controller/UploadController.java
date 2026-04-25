@@ -2,6 +2,7 @@ package dev.code925.pdf2img.controller;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import dev.code925.pdf2img.entities.DTO.FileResponse;
 import dev.code925.pdf2img.services.UploadService;
@@ -46,9 +47,13 @@ public class UploadController {
         }
 
         Set<FileResponse> response = Arrays.stream(multipleFiles)
-                .map(this.uploadService::uploadSingleFile)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .flatMap(file -> {
+                    try {
+                        return this.uploadService.uploadSingleFile(file).stream();
+                    }catch (Exception e){
+                        return Stream.empty();
+                    }
+                })
                 .collect(Collectors.toSet());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);

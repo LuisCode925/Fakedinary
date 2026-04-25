@@ -1,13 +1,18 @@
 package dev.code925.pdf2img.controller;
 
+import dev.code925.pdf2img.entities.DTO.ImagesResponse;
 import dev.code925.pdf2img.exception.OutOfRangeException;
 import dev.code925.pdf2img.repository.FileRepository;
 
+import dev.code925.pdf2img.services.FileStorageManger;
 import dev.code925.pdf2img.services.ImageService;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,9 +23,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
+@Log4j2
 @Validated
 @RestController
 @RequestMapping("/images")
@@ -32,8 +42,39 @@ public class ImageController {
     @Autowired
     private FileRepository fileRepository;
 
-    @GetMapping(path = "/{uuid}/{page}", produces = MediaType.IMAGE_JPEG_VALUE)
-    public ResponseEntity<?> showImage(
+    @Autowired
+    private FileStorageManger fileManger;
+
+    @GetMapping(path = "/{documentId}")
+    public ResponseEntity<ImagesResponse> getAllImagesFromPdf(@PathVariable @Size(min = 36, max = 36) @org.hibernate.validator.constraints.UUID String documentId){
+
+        String input = fileRepository.getAssetsImages(UUID.fromString(documentId));
+
+        if (input.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
+        }
+
+        Set<String> allImages = Arrays.stream(input.split(",")).collect(Collectors.toSet());
+
+        ImagesResponse response = new ImagesResponse();
+        response.setUuid(documentId);
+        response.setSize(allImages.size());
+
+        allImages.forEach(image -> {
+            Link embeddedImages = null;
+            try {
+                embeddedImages = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(ImageController.class).showImage(image)).withRel("images");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            response.add(embeddedImages);
+        });
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @GetMapping(path = "/render/{uuid}/{page}", produces = MediaType.IMAGE_JPEG_VALUE)
+    public ResponseEntity<?> renderImageFromPage(
             @PathVariable @Size(min = 36, max = 36) @org.hibernate.validator.constraints.UUID String uuid,
             @PathVariable @Min(1) Integer page
     ) throws IOException {
@@ -49,5 +90,15 @@ public class ImageController {
         return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.IMAGE_JPEG).body(response.get());
     }
 
+    @GetMapping(path = "/embedded/{imageId}", produces = MediaType.IMAGE_JPEG_VALUE)
+    public ResponseEntity<Resource> showImage(@PathVariable @Size(min = 36, max = 36) @org.hibernate.validator.constraints.UUID String imageId) throws IOException {
+        Resource image = this.fileManger.loadAsResource(String.format("%s.png", imageId));
+
+        if (!image.exists()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.IMAGE_JPEG).body(image);
+    }
 
 }

@@ -31,11 +31,12 @@ public class DownloadController {
       public ResponseEntity<Resource> serveFile(@PathVariable  @Size(min = 36, max = 36) @org.hibernate.validator.constraints.UUID String uuid) {
 
       Resource file = fileManger.loadAsResource(String.format("%s.pdf", uuid));
-      String originalName = fileRepository.getOriginalFilename(UUID.fromString(uuid));
 
-       if (!file.exists()){
-           return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+      if (!file.exists()){
+          return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+      }
+
+      String originalName = fileRepository.getOriginalFilename(UUID.fromString(uuid));
 
       return ResponseEntity.status(HttpStatus.OK)
               .header(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment; filename=\"%s\"", originalName) )

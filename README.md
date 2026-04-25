@@ -1,7 +1,7 @@
 # Fake-Cloudinary
 Microservicio desarrollado en Spring Boot para remplazar el uso de Cloudinary, 
 tiene las funcionalidades de subir archivos pdf, extraer el texto de los mismos y 
-generar imágenes a partir de sus paginas.
+generar imágenes a partir de sus páginas.
 
 Un solo archivo:
 ```
@@ -13,27 +13,224 @@ Multiples archivos:
 curl -X POST -F "files=@PATH/FILE.pdf" -F "files=@PATH/FILE.pdf" http://localhost:8080/pdf/upload-multiple
 ```
 
-El proceso de subir un archivo PDF mostrara información relativa al mismo, asi como enlaces para 
-realizar las operaciones extraer el texto y generar imágenes de la paginas: 
+El proceso de subir un archivo PDF mostrará información relativa al mismo, asi como enlaces HATEOAS (Hypermedia as the Engine of Application State) para 
+realizar las operaciones extraer el texto y generar imágenes a partir de las páginas: 
 ```
 {
-   "uuid":"40bb3fe6-6857-4076-91b0-c9332c91b95b",
-   "originalName":"Difference-Between-ML-DL-AI.pdf",
-   "fileSize":229386,
-   "contentType":"application/pdf",
-   "totalPages":3,
-   "deleted":false,
-   "uploadedAt":"2024-09-09T09:39:49.149091143",
-   "_links":{
-      "self":[
-         {
-            "href":"http://localhost:8080/pdf/40bb3fe6-6857-4076-91b0-c9332c91b95b"
-         },
-         {
-            "href":"http://localhost:8080/pdf/40bb3fe6-6857-4076-91b0-c9332c91b95b/extract-text"
-         }
-      ]
-   }
+    "uuid": "0c20a11d-30c2-471c-a978-011220d2290a",
+    "originalName": "Linux Device Drivers.3rd.Edition.pdf",
+    "fileSize": 12825921,
+    "contentType": "application/pdf",
+    "totalPages": 630,
+    "deleted": false,
+    "uploadedAt": "2026-04-22T04:53:57.89754972",
+    "metadata": {
+        "title": null,
+        "author": null,
+        "subject": null,
+        "keywords": null,
+        "creator": "1.00 - www.pdftk.com",
+        "producer": "itext-paulo (lowagie.com)[JDK1.1] - build 132",
+        "creationDate": "2005-03-25",
+        "modificationDate": "2005-03-25",
+        "metadataKeys": [
+            "CreationDate",
+            "Producer",
+            "Creator",
+            "ModDate"
+        ],
+        "trapped": null,
+        "dimensions": [
+            {
+                "width": 612.0,
+                "height": 792.0,
+                "orientation": "VERTICAL"
+            }
+        ],
+        "fonts": [
+            "CDBADJ+Times-Roman",
+            "PJBKCO+Symbol",
+            "MAGFHI+TheSansMonoCondensed-SemiLightItalic",
+            "CHLLNI+TheSansMonoCondensed-SemiLightItalic",
+            "PLKBJH+Birka-Italic",
+            "PEKDLM+TheSansMonoCondensed-Bold",
+            "PCLGPB+Myriad-CnBoldItalic",
+            "PJBFNN+Myriad-Condensed",
+            "PJBFIM+Myriad-CnItalic",
+            "ANIBKF+TheSansMonoCondensed-Bold",
+            "PJAHKM+Times-Roman",
+            "AEGKJF+Birka",
+            "PEJMJI+TheSansMonoCondensed-SemiLight",
+            "CHLLOJ+TheSansMonoCondensed-Bold",
+            "OGPNBA+Birka-Italic",
+            "PJAGLM+Birka",
+            "AEGKIN+Myriad-CnSemibold",
+            "AEHIKJ+TheSansMonoCondensed-Bold",
+            "IEACOJ+TheSansMonoCondensed-Bold",
+            "AEGNJK+TheSansMonoCondensed-SemiLight",
+            "AEGPOE+Myriad-CnBold",
+            "IDPHIF+TheSansMonoCondensed-SemiLight",
+            "PLKKAL+TheSansMonoCondensed-SemiLightItalic",
+            "AJNAOC+Times-Roman",
+            "PLKDCE+Times-Roman",
+            "CDBAAN+Myriad-CnSemibold",
+            "AEGKEE+Birka-Italic",
+            "IHOHNC+Times-Roman",
+            "PJBFMO+Helvetica-Condensed-Black",
+            "JLBOAD+Birka-Italic",
+            "DJMGCA+Birka",
+            "ODJNJD+Times-Roman",
+            "MAFHEC+Times-Roman",
+            "PHHPFJ+Times-Roman",
+            "ANHHOH+Times-Roman",
+            "OHAAMO+TheSansMonoCondensed-Bold",
+            "IMCGLO+Birka-Italic",
+            "PHHOEH+Myriad-CnSemibold",
+            "IDPGOP+Birka",
+            "DJMFND+Birka-Italic",
+            "MAGALE+TheSansMonoCondensed-SemiLight",
+            "AEHABF+Myriad-CnItalic",
+            "IMDOMO+Myriad-Condensed",
+            "DIPFON+Birka-Italic",
+            "ANHGLM+Birka",
+            "IMEIAP+Myriad-CnBold",
+            "IMCHAN+Birka",
+            "AJNHII+Myriad-CnBold",
+            "MAFKCO+Myriad-Condensed",
+            "PJAJOC+TheSansMonoCondensed-SemiLight",
+            "DJMOFC+TheSansMonoCondensed-SemiLight",
+            "HPPDFA+Myriad-CnItalic",
+            "HPPIOO+TheSansMonoCondensed-SemiLight",
+            "CDBANE+Birka",
+            "CFPMFM+Myriad-CnSemibold",
+            "ONHBEL+TheSansMonoCondensed-Bold",
+            "AJMPKK+Birka",
+            "ANHGGM+Birka-Italic",
+            "AEHIPJ+TheSansMonoCondensed-SemiLightItalic",
+            "CHLLKN+TheSansMonoCondensed-SemiLight",
+            "PCIFPL+Times-Roman",
+            "PLKBNO+Myriad-CnSemibold",
+            "IDPGOI+Myriad-CnSemibold",
+            "IMCIEC+Times-Roman",
+            "PEJLJK+Birka-Italic",
+            "AJMPFJ+Birka-Italic",
+            "CDBHMA+Myriad-Condensed",
+            "PHHPDA+TheSansMonoCondensed-SemiLight",
+            "DIPGDG+Myriad-CnSemibold",
+            "PLKBOG+Birka",
+            "IEACKG+Myriad-CnItalic",
+            "DJMHEM+Times-Roman",
+            "ODJPNP+TheSansMonoCondensed-SemiLightItalic",
+            "ONGLNC+Birka-Italic",
+            "PCLGJH+TheSansMonoCondensed-Bold",
+            "CFPMJA+Birka",
+            "ODKLHE+Myriad-Condensed",
+            "PCLGKD+TheSansMonoCondensed-Plain",
+            "PJAGHG+Birka-Italic",
+            "PJAGLF+Myriad-CnSemibold",
+            "PJBFPE+Myriad-CnBold",
+            "JLBOEJ+Birka",
+            "DJOIMA+TheSansMonoCondensed-Bold",
+            "OHBCJD+Myriad-CnBold",
+            "CDBHGB+Birka-SemiBoldItalic",
+            "CFPMLP+Birka-Italic",
+            "PJBPFG+TheSansMonoCondensed-Bold",
+            "ODKLLJ+Helvetica-Condensed-Bold",
+            "OPDMOD+TheSansMonoCondensed-SemiLight",
+            "PEJLOF+Birka",
+            "PEJMMP+Times-Roman",
+            "CHLFLM+Times-Roman",
+            "DJMJLO+Myriad-Condensed",
+            "CHLEAJ+Myriad-CnSemibold",
+            "ONGMAM+Myriad-CnSemibold",
+            "OGPOHN+Times-Roman",
+            "AJNDEG+TheSansMonoCondensed-SemiLight",
+            "AEGLKN+Times-Roman",
+            "IHOHEH+Myriad-CnSemibold",
+            "CGAADO+Times-Roman",
+            "HPOKJA+Birka-Italic",
+            "PHHNPN+Birka-Italic",
+            "ANHIOF+TheSansMonoCondensed-SemiLight",
+            "ODJPPB+TheSansMonoCondensed-Bold",
+            "JLBOEC+Myriad-CnSemibold",
+            "HPOKNI+Myriad-CnSemibold",
+            "PLKEAE+TheSansMonoCondensed-SemiLight",
+            "JLBPAG+TheSansMonoCondensed-SemiLight",
+            "HPOKNP+Birka",
+            "OPDMBN+Times-Roman",
+            "AEGPPJ+Myriad-Condensed",
+            "IMDPBL+Myriad-CnItalic",
+            "DJMGBJ+Myriad-CnSemibold",
+            "HPPDHO+Myriad-CnBold",
+            "IMEICE+TheSansMonoCondensed-Bold",
+            "ODKCCA+Myriad-CnBoldItalic",
+            "CHLDMB+Birka-Italic",
+            "ONGNBE+Times-Roman",
+            "OPEPOM+Myriad-Condensed",
+            "PCIEKP+Birka",
+            "ONGMON+TheSansMonoCondensed-SemiLight",
+            "ODJMDM+Myriad-CnSemibold",
+            "ODJLPC+Birka-Italic",
+            "AJNLKN+TheSansMonoCondensed-Bold",
+            "ODKLFL+Myriad-CnItalic",
+            "OPDLCG+Myriad-CnSemibold",
+            "IHOHIK+Birka",
+            "OGPPMA+TheSansMonoCondensed-SemiLight",
+            "IDPGKA+Birka-Italic",
+            "OPDKOG+Birka-Italic",
+            "PHHOEO+Birka",
+            "JLDCAK+Myriad-Condensed",
+            "IMCHAG+Myriad-CnSemibold",
+            "JLBPEF+Times-Roman",
+            "PEJLNN+Myriad-CnSemibold",
+            "OGPNGB+Myriad-CnSemibold",
+            "DIPGDO+Birka",
+            "DJNGOI+Myriad-CnItalic",
+            "MAFFMC+Birka",
+            "AJMPKC+Myriad-CnSemibold",
+            "ANHGLE+Myriad-CnSemibold",
+            "IMEIDE+TheSansMonoCondensed-Plain",
+            "MAFFHC+Birka-Italic",
+            "IEACJB+Myriad-CnBold",
+            "MAFFLK+Myriad-CnSemibold",
+            "IMEIEB+ConstantWillison-Bold",
+            "ODJOLH+TheSansMonoCondensed-SemiLight",
+            "CFPNGJ+Myriad-Condensed",
+            "IMDLDN+TheSansMonoCondensed-SemiLightItalic",
+            "IDPHMI+Times-Roman",
+            "PCIEGI+Birka-Italic",
+            "PCLGMB+Myriad-CnItalic",
+            "IHOHHH+Birka-SC",
+            "PLKHJL+TheSansMonoCondensed-Bold",
+            "HPOLPL+Times-Roman",
+            "OGPNGJ+Birka",
+            "OPDLCN+Birka",
+            "AJNHND+Myriad-CnItalic",
+            "OHADOH+Myriad-Condensed",
+            "PCIEKI+Myriad-CnSemibold",
+            "IMCKDM+TheSansMonoCondensed-SemiLight",
+            "CDBAPC+Birka-Italic",
+            "CHLFAM+Birka",
+            "OHBCKC+TheSansMonoCondensed-Plain",
+            "PCIFOC+TheSansMonoCondensed-SemiLight",
+            "ODKCFN+Myriad-CnBold",
+            "DIPGKO+Times-Roman",
+            "ODJMEE+Birka",
+            "ONGMBE+Birka",
+            "ANHJMP+Myriad-Condensed"
+        ]
+    },
+    "_links": {
+        "download": {
+            "href": "http://localhost:8080/downloads/0c20a11d-30c2-471c-a978-011220d2290a"
+        },
+        "thumbnail": {
+            "href": "http://localhost:8080/images/0c20a11d-30c2-471c-a978-011220d2290a/1"
+        },
+        "extractText": {
+            "href": "http://localhost:8080/pdf/0c20a11d-30c2-471c-a978-011220d2290a/text"
+        }
+    }
 }
 ```
 
@@ -50,99 +247,3 @@ docker exec -ti 1c88589eeadd /bin/ash
 docker rmi _hash_ V para remover imágenes
 
 docker rm -f $(docker ps -a -q --filter "status=exited")
-
-Dividiremos los escenarios en cuatro categorías principales: **Input/Cliente, Infraestructura, Formato del Archivo (PDF), y Lógica de Procesamiento.**
-
-### 1. Errores de Input y Validación (Client-Side)
-
-Estos errores ocurren antes de que el archivo llegue al motor de procesamiento.
-
-*   **Tamaño del Archivo Excedido:** El archivo es demasiado grande para ser manejado por el servidor (límites de `upload` o memoria).
-*   **Tipo de Archivo Incorrecto:** El cliente intenta subir un archivo que no es un PDF (ej. un `.jpg`, `.exe`, o un archivo corrupto disfrazado).
-*   **Fallo de Autenticación/Autorización:** El usuario no tiene los permisos necesarios para subir el archivo.
-*   **Falta de Datos:** El campo de archivo está vacío en la solicitud (sin archivo adjunto).
-
-### 2. Errores de Infraestructura y Servidor (Server-Side)
-
-Estos errores están relacionados con el entorno donde se ejecuta el código.
-
-*   **Timeout de la Solicitud:** El proceso de carga es muy largo y excede el tiempo límite configurado del servidor.
-*   **Fallo de Conexión a la Base de Datos:** El servidor no puede escribir la metadatos del archivo o los resultados del procesamiento en la base de datos.
-*   **Espacio en Disco Insuficiente:** El disco donde se intentan almacenar los archivos temporales o finales está lleno.
-*   **Errores de Permiso (Permission Denied):** El usuario del servidor no tiene los permisos necesarios para escribir en el directorio de destino.
-*   **Fallo del Servicio Externo:** Si utilizas servicios externos (ej. una API de OCR o un servicio de almacenamiento en la nube), y ese servicio falla.
-
-### 3. Errores de Formato y Estructura del PDF (File Integrity)
-
-Estos son errores específicos de los archivos PDF que se intentan procesar.
-
-*   **PDF Corrupto:** El archivo PDF está dañado o no sigue la estructura estándar de PDF (ej. encabezados o tablas malformadas).
-*   **PDF Válido pero Inusual:** El archivo es técnicamente un PDF, pero su estructura es tan inusual que la librería de parsing (ej. `PyPDF2`, `pdfminer`) no puede interpretarlo.
-*   **Archivos Incompletos:** El archivo se interrumpió durante la subida y no se completó la descarga.
-*   **Contenido Inesperado:** El PDF contiene contenido binario o datos que no son texto o estructura esperada.
-
-### 4. Errores de Lógica y Procesamiento (Application Logic)
-
-Estos errores ocurren durante la fase crítica de extracción, conversión o manipulación de los datos.
-
-*   **Exceso de Memoria (Out of Memory):** El archivo es muy grande y el proceso de carga de todo el contenido en la memoria (antes de escribirlo) agota la RAM del servidor.
-*   **Fallo en la Extracción de Texto (OCR Errors):** Si el proceso implica OCR (Reconocimiento Óptico de Caracteres), puede fallar si la imagen es de mala calidad, el texto es manuscrito o está en un idioma
-    no soportado.
-*   **Errores de Parsing (Análisis):** Fallo en la lógica que intenta analizar el texto extraído (ej. si esperabas una estructura de tablas y el parser falla).
-*   **Dependencias Faltantes:** Faltan librerías o módulos necesarios para la tarea (ej. la librería de OCR está desactualizada o no instalada).
-*   **Errores de Codificación de Caracteres:** Problemas al manejar caracteres especiales (acentos, símbolos) entre diferentes sistemas.
-
-
-Tu enfoque actual es **totalmente válido y estándar** para casos de uso comunes, pero la "mejor" manera depende de qué tan pesada sea la imagen y cuántas peticiones esperes manejar.
-
-Aquí te presento un análisis de tu método actual y las alternativas según el escenario:
-
----
-
-## 1. Tu método actual: `byte[]` (Memoria)
-Lo que estás haciendo es cargar todo el contenido del archivo en un arreglo de bytes en la memoria RAM de tu servidor antes de enviarlo.
-
-* **Pros:** Es simple, directo y funciona perfecto para imágenes pequeñas (iconos, avatares de usuario).
-* **Contras:** Si la imagen es muy grande (p. ej., un RAW de 20MB) o tienes miles de usuarios concurrentes, podrías agotar la memoria RAM (**OutOfMemoryError**), ya que cada hilo de ejecución guardará una copia de la imagen en memoria.
-
----
-
-## 2. La mejor forma para eficiencia: `Resource` o `Streaming`
-En lugar de cargar todo el archivo en un `byte[]`, puedes usar `FileSystemResource` o `InputStreamResource`. Esto permite que Spring escriba los datos directamente en el *output stream* de la respuesta HTTP, sin mantener todo el archivo en la RAM.
-
-```java
-@GetMapping("/imagen/{nombre}")
-public ResponseEntity<Resource> descargarImagen(@PathVariable String nombre) {
-    Path path = Paths.get("ruta/a/tus/imagenes/" + nombre);
-    Resource resource = new FileSystemResource(path);
-
-    return ResponseEntity.ok()
-            .contentType(MediaType.IMAGE_JPEG)
-            .body(resource);
-}
-```
-> **Nota:** Spring se encarga de cerrar los flujos de datos automáticamente cuando usas la interfaz `Resource`.
-
----
-
-## 3. La mejor forma para Arquitectura: URL Firmadas
-Si tu aplicación escala, la "mejor" forma no es que tu API sirva la imagen, sino delegar esa carga a un servicio especializado (como AWS S3, Google Cloud Storage o Azure Blob).
-
-* **Flujo:** Tu API devuelve una **URL temporal** (Signed URL).
-* **Beneficio:** El cliente descarga la imagen directamente desde los servidores de Amazon o Google, liberando a tu servidor de Java de procesar bytes y manejar el ancho de banda.
-
----
-
-## Resumen: ¿Cuál elegir?
-
-| Método | Cuándo usarlo |
-| :--- | :--- |
-| **`byte[]` (Tu método)** | Imágenes muy pequeñas o generadas dinámicamente en memoria. |
-| **`Resource` (Recomendado)** | Imágenes guardadas en disco local/servidor. Es más eficiente en memoria. |
-| **URL de CDN/Storage** | Aplicaciones de alto tráfico o producción a gran escala. |
-
-### Un par de consejos extra:
-1.  **Caché:** Asegúrate de usar el encabezado `Cache-Control`. Las imágenes no suelen cambiar seguido, así que deja que el navegador las guarde.
-2.  **ETags:** Considera implementar ETags para que el navegador solo descargue la imagen si realmente ha cambiado en el servidor.
-
-¿De qué tamaño aproximado son las imágenes que estás manejando y dónde están almacenadas?

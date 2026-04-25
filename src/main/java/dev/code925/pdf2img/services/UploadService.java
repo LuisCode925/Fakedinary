@@ -48,25 +48,11 @@ public class UploadService {
         // Mover el archivo a el directorio
         fileManger.store(fileUploaded, saved.getUuid().toString());
 
+        // Extrayendo las imágenes originales del document - SIN 762ms  CON 1.78s
+        metadataService.extractImages(saved.getUuid());
+
         return Optional.of(FileMapper.toFileResponse(saved));
     }
-
-    /*
-     * public Optional<?> uploadMultipleFiles(MultipartFile[] multipleFiles) {
-     * 
-     * List<File> response = new ArrayList<File>();
-     * 
-     * for (MultipartFile singleFile : multipleFiles) {
-     * this.fileValidator(singleFile);
-     * File saved = extractInformation(singleFile,
-     * singleFile.getOriginalFilename());
-     * fileManger.store(singleFile, saved.getUuid().toString());
-     * response.add(saved);
-     * }
-     * 
-     * List<File> repositoryResponse = fileRepository.saveAll(response);
-     * }
-     */
 
     public void fileValidator(MultipartFile file) throws IOException {
 

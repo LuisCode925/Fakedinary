@@ -4,7 +4,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 import dev.code925.pdf2img.controller.DownloadController;
-import dev.code925.pdf2img.controller.FileTextController;
+import dev.code925.pdf2img.controller.ExtractTextController;
 import org.mapstruct.*;
 
 import dev.code925.pdf2img.controller.ImageController;
@@ -24,18 +24,22 @@ public interface FileMapper {
 
      @AfterMapping
      default void addLinksHATEOAS(File pdf, @MappingTarget FileResponse response) {
-         Link self =linkTo(methodOn(DownloadController.class).serveFile(pdf.getUuid().toString())).withRel("download");
-         response.add(self);
-
          try {
-             Link thumbnailLink = linkTo(methodOn(ImageController.class).showImage(pdf.getUuid().toString(), 1)).withRel("thumbnail");
+             Link self =linkTo(methodOn(DownloadController.class).serveFile(pdf.getUuid().toString())).withRel("download");
+             response.add(self);
+
+             Link thumbnailLink = linkTo(methodOn(ImageController.class).renderImageFromPage(pdf.getUuid().toString(), 1)).withRel("thumbnail");
              response.add(thumbnailLink);
+
+             Link documentImages = linkTo(methodOn(ImageController.class).getAllImagesFromPdf(pdf.getUuid().toString())).withRel("document-images");
+             response.add(documentImages);
+
+             Link extractText = linkTo(methodOn(ExtractTextController.class).extractText(pdf.getUuid().toString())).withRel("extractText");
+             response.add(extractText);
+
          } catch (Exception e) {
              e.printStackTrace();
          }
-
-          Link extractText = linkTo(methodOn(FileTextController.class).extractText(pdf.getUuid().toString())).withRel("extractText");
-          response.add(extractText);
       }
 
 

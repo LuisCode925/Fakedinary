@@ -6,16 +6,16 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+@Data
 @Entity
-@Getter @Setter
 @AllArgsConstructor
 public class File {
 
@@ -32,6 +32,8 @@ public class File {
 
     private Integer totalPages;
 
+    private Set<String> images;
+
     private boolean deleted;
 
     private LocalDateTime uploadedAt;
@@ -44,5 +46,10 @@ public class File {
         this.uuid = UUID.randomUUID();
         this.deleted = false;
         this.uploadedAt = LocalDateTime.now();
+        this.images  = new HashSet<>();
+    }
+
+    public  void addImage(String image){
+        this.images.add(image);
     }
 }

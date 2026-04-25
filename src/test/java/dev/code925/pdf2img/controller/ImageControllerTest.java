@@ -41,7 +41,7 @@ class ImageControllerTest {
 
     @Test
     @DisplayName("GET /images/{uuid}/{page} - Bad Uuid")
-    void getImageFromPdfWithBadUuid() throws Exception {
+    void extractImageEmbeddedWithBadUuid() throws Exception {
 
         String invalidUuid = "40820653-5d89-4552-b478";
         String image = String.format("/images/%s/%d", invalidUuid, 1);
@@ -51,7 +51,7 @@ class ImageControllerTest {
 
     @Test
     @DisplayName("GET /images/{uuid}/{page} - Bad Page Number")
-    void getImageFromPdfWithBadPageNumber() throws Exception {
+    void extractImageEmbeddedWithBadPageNumber() throws Exception {
 
         String uuid = "baee570d-c697-41bd-b95d-86e35a185fb7";
         String image = String.format("/images/%s/%d", uuid, -1);

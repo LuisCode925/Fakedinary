@@ -1,3 +1,4 @@
+# Estrategia en Multihilo
 Sí, es posible acelerar el procesamiento utilizando hilos, pero hay un detalle técnico **crítico** que debes conocer: la clase `PDDocument` de PDFBox **no es thread-safe** (no es segura para hilos).
 
 Si intentas que varios hilos lean del mismo objeto `pdfDoc` al mismo tiempo, obtendrás errores de acceso o datos corruptos. Para hacerlo correctamente, cada hilo debe tener su propia instancia del documento o trabajar sobre una copia.

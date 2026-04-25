@@ -1,9 +1,11 @@
 package dev.code925.pdf2img.entities.DTO;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.UUID;
 
 import dev.code925.pdf2img.entities.FileMetadata;
+import dev.code925.pdf2img.entities.HashImage;
 import lombok.*;
 import org.springframework.hateoas.RepresentationModel;
 
