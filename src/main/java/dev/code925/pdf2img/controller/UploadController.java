@@ -26,8 +26,7 @@ public class UploadController {
         return "OK";
     }
 
-    @PostMapping(path = "/upload", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE }, produces = {
-            MediaType.APPLICATION_JSON_VALUE })
+    @PostMapping(path = "/upload", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE }, produces = {MediaType.APPLICATION_JSON_VALUE })
     public ResponseEntity<?> handleFileUpload(@RequestParam("file") MultipartFile file) throws Exception {
         Optional<FileResponse> response = this.uploadService.uploadSingleFile(file);
         if (response.isEmpty()) {
