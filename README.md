@@ -3,27 +3,29 @@ Microservicio desarrollado en Spring Boot para remplazar el uso de Cloudinary,
 tiene las funcionalidades de subir archivos pdf, extraer el texto de los mismos y 
 generar imágenes a partir de sus páginas.
 
+## UploadController
+
 Un solo archivo:
-```
+```bash
 curl -X POST -F "file=@Linux Device Drivers.3rd.Edition.pdf" http://localhost:8080/pdf/upload
 ```
 
 Multiples archivos:
-```
+```bash
 curl -X POST -F "files=@PATH/FILE.pdf" -F "files=@PATH/FILE.pdf" http://localhost:8080/pdf/upload-multiple
 ```
 
 El proceso de subir un archivo PDF mostrará información relativa al mismo, asi como enlaces HATEOAS (Hypermedia as the Engine of Application State) para 
 realizar las operaciones extraer el texto y generar imágenes a partir de las páginas: 
-```
+```json
 {
-    "uuid": "0c20a11d-30c2-471c-a978-011220d2290a",
+    "uuid": "ad987ff3-8853-44df-9fc1-49f2c2dcb05a",
     "originalName": "Linux Device Drivers.3rd.Edition.pdf",
     "fileSize": 12825921,
     "contentType": "application/pdf",
     "totalPages": 630,
     "deleted": false,
-    "uploadedAt": "2026-04-22T04:53:57.89754972",
+    "uploadedAt": "2026-04-29T15:05:37.296578995",
     "metadata": {
         "title": null,
         "author": null,
@@ -222,17 +224,74 @@ realizar las operaciones extraer el texto y generar imágenes a partir de las p�
     },
     "_links": {
         "download": {
-            "href": "http://localhost:8080/downloads/0c20a11d-30c2-471c-a978-011220d2290a"
+            "href": "http://localhost:8080/downloads/ad987ff3-8853-44df-9fc1-49f2c2dcb05a"
         },
         "thumbnail": {
-            "href": "http://localhost:8080/images/0c20a11d-30c2-471c-a978-011220d2290a/1"
+            "href": "http://localhost:8080/images/render/ad987ff3-8853-44df-9fc1-49f2c2dcb05a/1"
+        },
+        "document-images": {
+            "href": "http://localhost:8080/images/ad987ff3-8853-44df-9fc1-49f2c2dcb05a"
         },
         "extractText": {
-            "href": "http://localhost:8080/pdf/0c20a11d-30c2-471c-a978-011220d2290a/text"
+            "href": "http://localhost:8080/pdf/ad987ff3-8853-44df-9fc1-49f2c2dcb05a/text"
         }
     }
 }
 ```
+## DownloadController
+También existe un mecanismo que le permitira al usuario recuperar el archivo original que ha subido,
+el endpoint en cuestion soporta multiples conexiones acelerando la descarga cuando se utilizan gestores como 
+lo son Internet Download Manager o Free Download Manager.
+
+```
+curl -X GET http://localhost:8080/downloads/ad987ff3-8853-44df-9fc1-49f2c2dcb05a
+```
+## ExtractTextController
+El endpoint `/pdf/{uuid}/text` permite a los usuarios solicitar la extracción de texto de un documento PDF identificado por su `uuid`. 
+La funcionalidad realiza una extracción parcial del contenido utilizando la estructura del PDF (no OCR) utilizando la libreria PDFBox 
+procesando el texto para todas las páginas del documento y devolviendo el resultado a través de un stream.
+
+Para probar este endpoint, debes reemplazar `{UUID_DEL_DOCUMENTO}` con el ID real de un PDF que hayas cargado en el sistema.
+
+```bash
+curl -X GET http://localhost:8080/pdf/a1b2c3d4-e5f6-7890-1234-567890abcdef/text
+```
+
+## ImageController
+Este controlador gestiona las operaciones relacionadas con la gestión de la imagenes del documento PDF (embebidas), 
+extracción de texto mediante OCR (utilizando Tesseract) y renderizado de imágenes asociadas a documentos PDF.
+
+### Descripción de los Endpoints
+
+Este controlador expone tres funcionalidades principales para interactuar con los recursos de imagen
+y una para la extraction de texto mediante OCR:
+
+#### 1. Obtener Todas las Imágenes de un PDF (`getAllImagesFromPdf`)
+*   **Ruta:** `/images/{documentId}`
+*   **Función:** Recupera la lista de todas las imágenes incrustadas a un documento PDF, contienen las imagenes que PDFBox puede extraer. Como respuesta se devuelve el conteo total de imágenes y enlaces para cada una de ellas esto utilizando HATEOAS.
+*   **Parámetros:** `documentId` (UUID del PDF).
+
+#### 2. Extracción de Texto de Imagen (OCR) (`extractTextFromImage`)
+*   **Ruta:** `/images/ocr`
+*   **Función:** Realiza el Reconocimiento Óptico de Caracteres (OCR) en una imagen subida por el usuario.
+*   **Parámetros:**
+    *   `file`: Archivo de imagen a procesar solo en formato PNG (multipart/form-data).
+    *   `lang`: Idioma del texto a extraer (por defecto: `spa`), si se tiene más de un lenguaje se separa por una coma.
+*   **Respuesta:** `OCRResponse` con el texto extraído.
+
+#### 3. Renderizar una Página del PDF como Imagen (`renderImageFromPage`)
+*   **Ruta:** `/images/render/{uuid}/{page}`
+*   **Función:** Genera y devuelve la imagen correspondiente a una página específica de un documento PDF.
+*   **Parámetros:**
+    *   `uuid`: ID del documento PDF.
+    *   `page`: Número de la página a renderizar (debe ser $\ge 1$).
+*   **Respuesta:** La imagen renderizada en formato JPEG.
+
+#### 4. Mostrar Imagen Incrustada (`showImage`)
+*   **Ruta:** `/images/embedded/{imageId}`
+*   **Función:** Recupera y sirve el archivo de imagen (PNG) asociado por su ID.
+*   **Parámetros:** `imageId` (UUID de la imagen).
+*   **Respuesta:** El recurso de imagen en formato JPEG.
 
 ## Comandos docker
 

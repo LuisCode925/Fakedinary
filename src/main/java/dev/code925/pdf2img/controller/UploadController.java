@@ -49,7 +49,7 @@ public class UploadController {
                 .flatMap(file -> {
                     try {
                         return this.uploadService.uploadSingleFile(file).stream();
-                    }catch (Exception e){
+                    } catch (Exception e){
                         return Stream.empty();
                     }
                 })

@@ -38,6 +38,29 @@ public class FileStorageManagerImpl implements FileStorageManger {
     }
 
     @Override
+    public void delete(String filename) throws StorageException {
+        if (filename == null || filename.trim().isEmpty()) {
+            throw new StorageException("El nombre del archivo a eliminar no puede estar vacío.");
+        }
+
+        // 1. Resolver la ruta completa del archivo a borrar
+        Path filePath = rootLocation.resolve(filename).normalize();
+
+        // 2. Verificar si el archivo existe antes de intentar borrarlo (opcional, pero buena práctica)
+        if (!Files.exists(filePath)) {
+            throw new StorageFileNotFoundException("El archivo no se encontró: " + filename);
+        }
+
+        // 3. Ejecutar la eliminación
+        try {
+            Files.delete(filePath);
+            log.info("Archivo eliminado exitosamente: " + filePath.toString());
+        } catch (IOException e) {
+            throw new StorageException("Error al intentar eliminar el archivo: " + filename, e);
+        }
+    }
+
+    @Override
     public void init() {
         try {
             Files.createDirectories(rootLocation);
@@ -80,13 +103,13 @@ public class FileStorageManagerImpl implements FileStorageManger {
     }
 
     @Override
-    public void store(MultipartFile file, String uuid) {
+    public void store(MultipartFile file, String uuid, String extension) {
         try {
             if (file.isEmpty()) {
                 throw new StorageException("Failed to store empty file.");
             }
             Path destinationFile = this.rootLocation.resolve(
-                    Paths.get(uuid + ".pdf"))
+                    Paths.get(String.format("%s.%s", uuid, extension)))
                     .normalize().toAbsolutePath();
             // file.getOriginalFilename()
             if (!destinationFile.getParent().equals(this.rootLocation.toAbsolutePath())) {

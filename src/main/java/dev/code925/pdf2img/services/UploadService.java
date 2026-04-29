@@ -46,7 +46,7 @@ public class UploadService {
         File saved = fileRepository.save(extractedInfo);
 
         // Mover el archivo a el directorio
-        fileManger.store(fileUploaded, saved.getUuid().toString());
+        fileManger.store(fileUploaded, saved.getUuid().toString(), "pdf");
 
         // Extrayendo las imágenes originales del document - SIN 762ms  CON 1.78s
         metadataService.extractImages(saved.getUuid());

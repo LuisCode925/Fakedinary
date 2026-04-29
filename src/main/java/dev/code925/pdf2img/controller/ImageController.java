@@ -1,6 +1,7 @@
 package dev.code925.pdf2img.controller;
 
 import dev.code925.pdf2img.entities.DTO.ImagesResponse;
+import dev.code925.pdf2img.entities.DTO.OCRResponse;
 import dev.code925.pdf2img.exception.OutOfRangeException;
 import dev.code925.pdf2img.repository.FileRepository;
 
@@ -9,6 +10,9 @@ import dev.code925.pdf2img.services.ImageService;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import lombok.extern.log4j.Log4j2;
+import net.sourceforge.tess4j.ITesseract;
+import net.sourceforge.tess4j.Tesseract;
+import net.sourceforge.tess4j.TesseractException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.hateoas.Link;
@@ -17,11 +21,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -72,6 +75,38 @@ public class ImageController {
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
+
+    @PostMapping(path = "/ocr", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+    public ResponseEntity<OCRResponse> extractTextFromImage(@RequestParam("file") MultipartFile file, @RequestParam(defaultValue = "spa") String lang) {
+
+        ITesseract instance = new Tesseract();
+        // Directorio de tessdata de tesseract en Ubuntu Linux
+        instance.setDatapath("/usr/share/tesseract-ocr/5/tessdata");
+        instance.setLanguage(lang.replace(',', '+'));
+
+        // java --enable-native-access=ALL-UNNAMED -jar tu-archivo.jar
+        // ls | xargs -I {} dwebp {} -o {}.png
+
+        OCRResponse ocrResponse = null;
+        try {
+            UUID ocrUuid = UUID.randomUUID();
+            fileManger.store(file, ocrUuid.toString(), "png");
+            Resource imageFile = fileManger.loadAsResource(ocrUuid.toString()+".png");
+            String result = instance.doOCR(imageFile.getFile());
+
+            ocrResponse = new OCRResponse();
+            ocrResponse.setOriginalFile(file.getOriginalFilename());
+            ocrResponse.setContentType(file.getContentType());
+            ocrResponse.setSize(file.getSize());
+            ocrResponse.setText(result);
+
+            fileManger.delete(ocrUuid.toString()+".png");
+        } catch (TesseractException | IOException e) {
+            System.err.println("OCR Error: " + e.getMessage());
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(ocrResponse);
+    }
+
 
     @GetMapping(path = "/render/{uuid}/{page}", produces = MediaType.IMAGE_JPEG_VALUE)
     public ResponseEntity<?> renderImageFromPage(
