@@ -2,11 +2,13 @@ package dev.code925.pdf2img.controller;
 
 import dev.code925.pdf2img.entities.DTO.ImagesResponse;
 import dev.code925.pdf2img.entities.DTO.OCRResponse;
+import dev.code925.pdf2img.exception.EmptyFileException;
 import dev.code925.pdf2img.exception.OutOfRangeException;
 import dev.code925.pdf2img.repository.FileRepository;
 
 import dev.code925.pdf2img.services.FileStorageManger;
 import dev.code925.pdf2img.services.ImageService;
+import dev.code925.pdf2img.utils.LanguageConverter;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import lombok.extern.log4j.Log4j2;
@@ -26,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -47,6 +50,12 @@ public class ImageController {
 
     @Autowired
     private FileStorageManger fileManger;
+
+    // La secuencia de bytes que identifica a un archivo PNG
+    private static final byte[] PNG_MAGIC_BYTES = {
+            (byte) 0x89, (byte) 0x50, (byte) 0x4E, (byte) 0x47, // PNG Signature
+            (byte) 0x0D, (byte) 0x0A, (byte) 0x1A, (byte) 0x0A  // Chunk Length
+    };
 
     @GetMapping(path = "/{documentId}")
     public ResponseEntity<ImagesResponse> getAllImagesFromPdf(@PathVariable @Size(min = 36, max = 36) @org.hibernate.validator.constraints.UUID String documentId){
@@ -77,7 +86,15 @@ public class ImageController {
     }
 
     @PostMapping(path = "/ocr", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
-    public ResponseEntity<OCRResponse> extractTextFromImage(@RequestParam("file") MultipartFile file, @RequestParam(defaultValue = "spa") String lang) {
+    public ResponseEntity<?> extractTextFromImage(@RequestParam("file") MultipartFile file, @RequestParam(defaultValue = "spa") String lang) throws IOException {
+
+        if (file.isEmpty()) {
+            throw  new EmptyFileException("No se proporcionó ningún archivo.");
+        }
+
+        if (!this.isValidPng(file)) {
+            return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body("Error: El archivo no es un formato PNG válido.");
+        }
 
         ITesseract instance = new Tesseract();
         // Directorio de tessdata de tesseract en Ubuntu Linux
@@ -94,10 +111,13 @@ public class ImageController {
             Resource imageFile = fileManger.loadAsResource(ocrUuid.toString()+".png");
             String result = instance.doOCR(imageFile.getFile());
 
+            Set<String> languages = LanguageConverter.convertToLanguageSet(lang);
+
             ocrResponse = new OCRResponse();
             ocrResponse.setOriginalFile(file.getOriginalFilename());
             ocrResponse.setContentType(file.getContentType());
             ocrResponse.setSize(file.getSize());
+            ocrResponse.setLanguages(languages);
             ocrResponse.setText(result);
 
             fileManger.delete(ocrUuid.toString()+".png");
@@ -136,4 +156,29 @@ public class ImageController {
         return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.IMAGE_JPEG).body(image);
     }
 
+
+    private boolean isValidPng(MultipartFile file) throws IOException {
+        if (file.isEmpty()) {
+            return false;
+        }
+
+        try (InputStream is = file.getInputStream()) {
+            byte[] buffer = new byte[PNG_MAGIC_BYTES.length];
+            int bytesRead = is.read(buffer);
+
+            if (bytesRead < PNG_MAGIC_BYTES.length) {
+                // El archivo es demasiado pequeño para contener el header de un PNG
+                return false;
+            }
+
+            // Comparar los bytes leídos con la firma PNG
+            for (int i = 0; i < PNG_MAGIC_BYTES.length; i++) {
+                if (buffer[i] != PNG_MAGIC_BYTES[i]) {
+                    return false; // No coincide con la firma PNG
+                }
+            }
+
+            return true; // Coincide, es probable que sea un PNG
+        }
+    }
 }

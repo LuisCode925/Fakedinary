@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Set;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -14,6 +16,8 @@ public class OCRResponse {
     Long size;
 
     String contentType;
+
+    Set<String> languages;
 
     String text;
 }
